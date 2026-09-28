@@ -1,0 +1,6 @@
+{
+  "name": "HackHub: 버그바운티 OS",
+  "description": "실시간 애널리틱스와 보안 취약점 제출 포털, Finefox 웹 브라우저, 터미널 CLI, apt 패키지 관리자 및 가상 키보드가 탑재된 우분투 GNOME 스타일 시뮬레이션",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
