@@ -9,11 +9,14 @@ import { sound } from '../utils/audio';
 interface BrowserWindowProps {
   onOpenWindow?: (id: any) => void;
   onExecuteCommand?: (cmd: string) => void;
+  onObjectiveComplete?: (objId: string) => void;
 }
 
-type WebSiteId = 'geogle' | 'bcc' | 'bank' | 'hotel' | 'results';
+type WebSiteId = 'geogle' | 'bcc' | 'bank' | 'hotel' | 'results' | 'mail' | 'hackhub';
 
-export const BrowserWindow: React.FC<BrowserWindowProps> = () => {
+export const BrowserWindow: React.FC<BrowserWindowProps> = ({
+  onObjectiveComplete,
+}) => {
   const [currentUrl, setCurrentUrl] = useState('https://www.geogle.com');
   const [inputUrl, setInputUrl] = useState('https://www.geogle.com');
   const [activeSite, setActiveSite] = useState<WebSiteId>('geogle');
@@ -28,6 +31,14 @@ export const BrowserWindow: React.FC<BrowserWindowProps> = () => {
   const [transferTarget, setTransferTarget] = useState('');
   const [transferAmount, setTransferAmount] = useState('');
   const [transferSuccess, setTransferSuccess] = useState<string | null>(null);
+
+  // Mail state
+  const [createdMail, setCreatedMail] = useState<string | null>(null);
+  const [mailInput, setMailInput] = useState('');
+
+  // Hackhub state
+  const [hackhubJobApplied, setHackhubJobApplied] = useState(false);
+  const [reportSubmitted, setReportSubmitted] = useState(false);
 
   // Hotel Booking state
   const [bookedRoom, setBookedRoom] = useState<string | null>(null);
@@ -55,6 +66,8 @@ export const BrowserWindow: React.FC<BrowserWindowProps> = () => {
         bcc: 'https://www.bcc.co.uk/news',
         bank: 'https://online.fincorp-bank.com',
         hotel: 'https://booking.grandocean.com',
+        mail: 'https://mail.geogle.com',
+        hackhub: 'https://hackhub.dark.net',
         results: `https://www.geogle.com/search?q=${encodeURIComponent(submittedQuery)}`,
       };
       setCurrentUrl(urlMap[prevSite]);
@@ -74,6 +87,8 @@ export const BrowserWindow: React.FC<BrowserWindowProps> = () => {
         bcc: 'https://www.bcc.co.uk/news',
         bank: 'https://online.fincorp-bank.com',
         hotel: 'https://booking.grandocean.com',
+        mail: 'https://mail.geogle.com',
+        hackhub: 'https://hackhub.dark.net',
         results: `https://www.geogle.com/search?q=${encodeURIComponent(submittedQuery)}`,
       };
       setCurrentUrl(urlMap[nextSite]);
@@ -95,6 +110,13 @@ export const BrowserWindow: React.FC<BrowserWindowProps> = () => {
       navigateTo('bcc', 'https://www.bcc.co.uk/news');
     } else if (clean.includes('bank') || clean.includes('fincorp')) {
       navigateTo('bank', 'https://online.fincorp-bank.com');
+      onObjectiveComplete?.('3-2');
+    } else if (clean.includes('mail') || clean.includes('email')) {
+      navigateTo('mail', 'https://mail.geogle.com');
+      onObjectiveComplete?.('3-1');
+    } else if (clean.includes('hackhub') || clean.includes('job') || clean.includes('bounty')) {
+      navigateTo('hackhub', 'https://hackhub.dark.net');
+      onObjectiveComplete?.('3-3');
     } else if (clean.includes('hotel') || clean.includes('grandocean') || clean.includes('ocean')) {
       navigateTo('hotel', 'https://booking.grandocean.com');
     } else {
@@ -210,12 +232,37 @@ export const BrowserWindow: React.FC<BrowserWindowProps> = () => {
           <Newspaper className="w-3 h-3 text-rose-500" /> BCC 뉴스
         </button>
         <button
-          onClick={() => navigateTo('bank', 'https://online.fincorp-bank.com')}
+          onClick={() => {
+            navigateTo('mail', 'https://mail.geogle.com');
+            onObjectiveComplete?.('3-1');
+          }}
+          className={`flex items-center gap-1.5 px-2 py-0.5 rounded cursor-pointer transition-colors shrink-0 ${
+            activeSite === 'mail' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:text-white'
+          }`}
+        >
+          <Globe className="w-3 h-3 text-cyan-400" /> Finefox 메일
+        </button>
+        <button
+          onClick={() => {
+            navigateTo('bank', 'https://online.fincorp-bank.com');
+            onObjectiveComplete?.('3-2');
+          }}
           className={`flex items-center gap-1.5 px-2 py-0.5 rounded cursor-pointer transition-colors shrink-0 ${
             activeSite === 'bank' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:text-white'
           }`}
         >
           <CreditCard className="w-3 h-3 text-emerald-400" /> 온라인 뱅크
+        </button>
+        <button
+          onClick={() => {
+            navigateTo('hackhub', 'https://hackhub.dark.net');
+            onObjectiveComplete?.('3-3');
+          }}
+          className={`flex items-center gap-1.5 px-2 py-0.5 rounded cursor-pointer transition-colors shrink-0 ${
+            activeSite === 'hackhub' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:text-white'
+          }`}
+        >
+          <Sparkles className="w-3 h-3 text-rose-400" /> Hackhub 직업 포털
         </button>
         <button
           onClick={() => navigateTo('hotel', 'https://booking.grandocean.com')}
@@ -684,6 +731,135 @@ export const BrowserWindow: React.FC<BrowserWindowProps> = () => {
                     </button>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+        {/* ==================== 5. MAIL 서비스 (Finefox Mail) ==================== */}
+        {activeSite === 'mail' && (
+          <div className="min-h-full bg-slate-950 text-slate-100 p-6 flex flex-col items-center justify-center">
+            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl">
+              <div className="text-center space-y-1">
+                <div className="text-3xl font-black text-cyan-400">Finefox Mail</div>
+                <p className="text-xs text-slate-400">안전하고 암호화된 전용 이메일 서비스</p>
+              </div>
+
+              {createdMail ? (
+                <div className="p-4 bg-emerald-950/80 border border-emerald-700 text-emerald-300 text-xs rounded-xl space-y-2">
+                  <div className="font-bold flex items-center gap-1.5 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" /> 이메일 생성 완료!
+                  </div>
+                  <div>생성된 이메일 계정: <b>{createdMail}</b></div>
+                  <div className="text-[10px] text-slate-400">보안 인증 메일 전송 준비가 완료되었습니다.</div>
+                </div>
+              ) : (
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!mailInput) return;
+                    sound.playNotification();
+                    const fullMail = mailInput.includes('@') ? mailInput : `${mailInput}@finefox.net`;
+                    setCreatedMail(fullMail);
+                    onObjectiveComplete?.('3-1');
+                  }} 
+                  className="space-y-3 text-xs"
+                >
+                  <div>
+                    <label className="text-slate-300 block mb-1 font-semibold">희망하는 이메일 아이디 입력</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={mailInput}
+                        onChange={(e) => setMailInput(e.target.value)}
+                        placeholder="예: agent_kali"
+                        className="flex-1 h-9 px-3 bg-slate-950 border border-slate-700 rounded-xl text-white outline-none focus:border-cyan-400"
+                        required
+                      />
+                      <span className="text-slate-400 font-mono text-[11px]">@finefox.net</span>
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full h-9 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold cursor-pointer transition-colors shadow-lg"
+                  >
+                    이메일 계정 생성
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ==================== 6. HACKHUB 다크웹 직업 포털 (Hackhub) ==================== */}
+        {activeSite === 'hackhub' && (
+          <div className="min-h-full bg-slate-950 text-slate-100 p-6">
+            <div className="max-w-3xl mx-auto space-y-6">
+              <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">🔥</span>
+                    <h2 className="text-xl font-extrabold text-white">Hackhub 글로벌 취약점 제보 & 직업 포털</h2>
+                  </div>
+                  <span className="px-2.5 py-1 bg-rose-950 text-rose-300 border border-rose-800 rounded-full text-xs font-mono font-bold">
+                    Bounty Platform 2026
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  전 세계 보안 전문가들이 참여하는 취약점 검증 및 보안 에이전트 채용 포털입니다.
+                </p>
+              </div>
+
+              {/* 직업 신청 카드 */}
+              <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-cyan-400" /> 1단계: 보안 침투 테스트 에이전트 직업 등록
+                </h3>
+
+                {hackhubJobApplied ? (
+                  <div className="p-3 bg-emerald-950/80 border border-emerald-700 text-emerald-300 text-xs rounded-xl flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span><b>Hackhub 공인 보안 에이전트</b> 승인이 등록되었습니다! 이제 바운티 의뢰를 수행할 수 있습니다.</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      sound.playNotification();
+                      setHackhubJobApplied(true);
+                      onObjectiveComplete?.('3-3');
+                    }}
+                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-colors"
+                  >
+                    보안 에이전트 직업 등록 신청
+                  </button>
+                )}
+              </div>
+
+              {/* 버그바운티 미션 수락 및 제출 */}
+              <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-rose-400" /> 2단계: 최우선 버그바운티 취약점 보고서 제출
+                </h3>
+
+                {reportSubmitted ? (
+                  <div className="p-4 bg-emerald-950/80 border border-emerald-700 text-emerald-300 text-xs rounded-xl space-y-1">
+                    <div className="font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" /> 취약점 보고서 검증 완료 및 포상금 입금!
+                    </div>
+                    <div>지급된 바운티 상금: <b>$25,000</b> (지갑 및 퍼스트 파이낸셜 통장으로 입금)</div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      sound.playNotification();
+                      setReportSubmitted(true);
+                      onObjectiveComplete?.('3-4');
+                    }}
+                    disabled={!hackhubJobApplied}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-colors"
+                  >
+                    보안 취약점 보고서 작성 & 제출
+                  </button>
+                )}
               </div>
             </div>
           </div>

@@ -74,8 +74,10 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
         zIndex: win.zIndex,
         left: win.isMaximized ? 0 : `${win.x}px`,
         top: win.isMaximized ? 0 : `${win.y}px`,
-        width: win.isMaximized ? '100vw' : `${win.width}px`,
-        height: win.isMaximized ? 'calc(100vh - 48px)' : `${win.height}px`,
+        width: win.isMaximized ? '100vw' : `max(${win.minWidth || 320}px, min(95vw, ${win.width}px))`,
+        height: win.isMaximized ? 'calc(100vh - 48px)' : `max(${win.minHeight || 240}px, min(85vh, ${win.height}px))`,
+        minWidth: `${win.minWidth || 320}px`,
+        minHeight: `${win.minHeight || 240}px`,
       }}
       className={`fixed flex flex-col rounded-t-xl rounded-b-lg border border-slate-700/80 shadow-2xl backdrop-blur-md overflow-hidden bg-slate-900 transition-[width,height,transform] duration-150 select-none ${
         win.isMaximized ? 'rounded-none border-x-0 border-t-0' : ''

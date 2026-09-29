@@ -19,6 +19,8 @@ interface TaskbarProps {
   onRequestLogout: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
+  hotspotEnabled?: boolean;
+  onConnectNetwork?: (ssid: string) => void;
 }
 
 interface WifiNetwork {
@@ -50,6 +52,8 @@ export const Taskbar: React.FC<TaskbarProps> = ({
   onRequestLogout,
   soundEnabled,
   onToggleSound,
+  hotspotEnabled = false,
+  onConnectNetwork,
 }) => {
   const [isAppMenuOpen, setIsAppMenuOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -63,7 +67,7 @@ export const Taskbar: React.FC<TaskbarProps> = ({
   // Only show windows that are currently OPEN
   const openWindows = windows.filter((win) => win.isOpen);
 
-  const handleConnectWifi = (id: string) => {
+  const handleConnectWifi = (id: string, ssid?: string) => {
     sound.playNotification();
     setWifiNetworks((prev) =>
       prev.map((net) => ({
@@ -71,7 +75,21 @@ export const Taskbar: React.FC<TaskbarProps> = ({
         connected: net.id === id,
       }))
     );
+    if (onConnectNetwork && ssid) {
+      onConnectNetwork(ssid);
+    }
   };
+
+  const displayNetworks = [...wifiNetworks];
+  if (hotspotEnabled && !displayNetworks.some((n) => n.id === 'hotspot')) {
+    displayNetworks.unshift({
+      id: 'hotspot',
+      ssid: 'Smartphone-Hotspot',
+      signal: '100%',
+      secured: false,
+      connected: false,
+    });
+  }
 
   return (
     <>
@@ -184,10 +202,10 @@ export const Taskbar: React.FC<TaskbarProps> = ({
           {wifiEnabled ? (
             <div className="space-y-1.5 max-h-56 overflow-y-auto">
               <div className="text-[10px] text-slate-400 font-semibold uppercase">사용 가능한 네트워크</div>
-              {wifiNetworks.map((net) => (
+              {displayNetworks.map((net) => (
                 <button
                   key={net.id}
-                  onClick={() => handleConnectWifi(net.id)}
+                  onClick={() => handleConnectWifi(net.id, net.ssid)}
                   className={`w-full p-2 rounded-xl flex items-center justify-between transition-colors cursor-pointer text-left ${
                     net.connected
                       ? 'bg-emerald-950/80 border border-emerald-700 text-emerald-300'

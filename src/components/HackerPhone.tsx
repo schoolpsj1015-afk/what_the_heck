@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   MessageSquare, Wallet, Phone as PhoneIcon, PhoneCall, PhoneOff,
   X, ChevronLeft, Wifi, BatteryCharging, Send, Lock, Unlock,
-  ShieldCheck, ArrowUpRight, ArrowDownLeft, Clock, Delete
+  ShieldCheck, ArrowUpRight, ArrowDownLeft, Clock, Delete, Settings as SettingsIcon,
+  Radio, WifiOff, CheckCircle2
 } from 'lucide-react';
 import { PhoneMessage } from '../types';
 import { sound } from '../utils/audio';
@@ -14,9 +15,14 @@ interface HackerPhoneProps {
   walletBalance: number;
   onSendMessage?: (content: string) => void;
   onExecuteCommand?: (cmd: string) => void;
+  cellularEnabled?: boolean;
+  hotspotEnabled?: boolean;
+  onToggleCellular?: () => void;
+  onToggleHotspot?: () => void;
+  onOpenPhoneSettings?: () => void;
 }
 
-type PhoneScreenMode = 'lock' | 'home' | 'messages' | 'phone' | 'wallet';
+type PhoneScreenMode = 'lock' | 'home' | 'messages' | 'phone' | 'wallet' | 'settings';
 
 interface CallLogItem {
   id: string;
@@ -39,6 +45,11 @@ export const HackerPhone: React.FC<HackerPhoneProps> = ({
   messages,
   walletBalance,
   onSendMessage,
+  cellularEnabled = false,
+  hotspotEnabled = false,
+  onToggleCellular,
+  onToggleHotspot,
+  onOpenPhoneSettings,
 }) => {
   const [screenMode, setScreenMode] = useState<PhoneScreenMode>('lock');
   const [activeChat, setActiveChat] = useState<PhoneMessage | null>(null);
@@ -206,25 +217,25 @@ export const HackerPhone: React.FC<HackerPhoneProps> = ({
                   스마트폰 앱
                 </div>
 
-                {/* 그리드 앱 아이콘 (메시지, 전화, 지갑) */}
-                <div className="grid grid-cols-3 gap-4 px-2">
+                {/* 그리드 앱 아이콘 (메시지, 전화, 지갑, 설정) */}
+                <div className="grid grid-cols-4 gap-2.5 px-1">
                   {/* 앱 1: 메시지 */}
                   <button
                     onClick={() => {
                       sound.playKeypress();
                       setScreenMode('messages');
                     }}
-                    className="relative flex flex-col items-center gap-2 group cursor-pointer"
+                    className="relative flex flex-col items-center gap-1.5 group cursor-pointer"
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
-                      <MessageSquare className="w-7 h-7" />
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
+                      <MessageSquare className="w-6 h-6" />
                       {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-slate-950 shadow">
+                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-slate-950 shadow">
                           {unreadCount}
                         </span>
                       )}
                     </div>
-                    <span className="text-xs font-semibold text-slate-200">메시지</span>
+                    <span className="text-[11px] font-semibold text-slate-200">메시지</span>
                   </button>
 
                   {/* 앱 2: 전화 */}
@@ -233,12 +244,12 @@ export const HackerPhone: React.FC<HackerPhoneProps> = ({
                       sound.playKeypress();
                       setScreenMode('phone');
                     }}
-                    className="flex flex-col items-center gap-2 group cursor-pointer"
+                    className="flex flex-col items-center gap-1.5 group cursor-pointer"
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-600 flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
-                      <PhoneIcon className="w-7 h-7" />
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-600 flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
+                      <PhoneIcon className="w-6 h-6" />
                     </div>
-                    <span className="text-xs font-semibold text-slate-200">전화</span>
+                    <span className="text-[11px] font-semibold text-slate-200">전화</span>
                   </button>
 
                   {/* 앱 3: 지갑 */}
@@ -247,12 +258,27 @@ export const HackerPhone: React.FC<HackerPhoneProps> = ({
                       sound.playKeypress();
                       setScreenMode('wallet');
                     }}
-                    className="flex flex-col items-center gap-2 group cursor-pointer"
+                    className="flex flex-col items-center gap-1.5 group cursor-pointer"
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-emerald-600 flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
-                      <Wallet className="w-7 h-7" />
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-emerald-600 flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
+                      <Wallet className="w-6 h-6" />
                     </div>
-                    <span className="text-xs font-semibold text-slate-200">지갑</span>
+                    <span className="text-[11px] font-semibold text-slate-200">지갑</span>
+                  </button>
+
+                  {/* 앱 4: 설정 */}
+                  <button
+                    onClick={() => {
+                      sound.playKeypress();
+                      setScreenMode('settings');
+                      if (onOpenPhoneSettings) onOpenPhoneSettings();
+                    }}
+                    className="flex flex-col items-center gap-1.5 group cursor-pointer"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-700 to-slate-900 border border-slate-600 flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
+                      <SettingsIcon className="w-6 h-6 text-slate-200" />
+                    </div>
+                    <span className="text-[11px] font-semibold text-slate-200">설정</span>
                   </button>
                 </div>
               </div>
@@ -515,6 +541,95 @@ export const HackerPhone: React.FC<HackerPhoneProps> = ({
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ==================== 6. 설정 앱 (Phone Settings - Cellular & Hotspot) ==================== */}
+          {screenMode === 'settings' && (
+            <div className="flex-1 flex flex-col overflow-hidden bg-slate-950">
+              <div className="h-10 px-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
+                <button
+                  onClick={() => {
+                    setScreenMode('home');
+                    sound.playKeypress();
+                  }}
+                  className="text-xs text-cyan-400 font-semibold flex items-center gap-1 cursor-pointer hover:underline"
+                >
+                  <ChevronLeft className="w-4 h-4" /> 홈
+                </button>
+                <div className="text-xs font-bold text-white">스마트폰 설정</div>
+                <span className="w-6"></span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 font-sans">
+                <div className="text-[11px] font-bold text-slate-400 uppercase">네트워크 & 통신</div>
+
+                {/* 1. 셀룰러 데이터 스위치 */}
+                <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                      cellularEnabled ? 'bg-emerald-950 text-emerald-400 border border-emerald-700' : 'bg-slate-800 text-slate-500'
+                    }`}>
+                      <Radio className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">셀룰러 액세스</div>
+                      <div className="text-[10px] text-slate-400">모바일 4G/5G 데이터</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      sound.playKeypress();
+                      if (onToggleCellular) onToggleCellular();
+                    }}
+                    className={`w-12 h-6 rounded-full p-0.5 transition-colors cursor-pointer ${
+                      cellularEnabled ? 'bg-emerald-500' : 'bg-slate-700'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
+                      cellularEnabled ? 'translate-x-6' : 'translate-x-0'
+                    }`} />
+                  </button>
+                </div>
+
+                {/* 2. 모바일 핫스팟 스위치 */}
+                <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                      hotspotEnabled ? 'bg-cyan-950 text-cyan-400 border border-cyan-700' : 'bg-slate-800 text-slate-500'
+                    }`}>
+                      <Wifi className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">모바일 핫스팟</div>
+                      <div className="text-[10px] text-slate-400">PC 연결 테더링 (Smartphone-Hotspot)</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      sound.playKeypress();
+                      if (onToggleHotspot) onToggleHotspot();
+                    }}
+                    className={`w-12 h-6 rounded-full p-0.5 transition-colors cursor-pointer ${
+                      hotspotEnabled ? 'bg-cyan-500' : 'bg-slate-700'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
+                      hotspotEnabled ? 'translate-x-6' : 'translate-x-0'
+                    }`} />
+                  </button>
+                </div>
+
+                {hotspotEnabled && (
+                  <div className="p-3 bg-cyan-950/60 border border-cyan-800/80 rounded-2xl text-[11px] text-cyan-300 space-y-1 animate-in fade-in">
+                    <div className="font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> 핫스팟 방송 중
+                    </div>
+                    <div>SSID: <b>Smartphone-Hotspot</b></div>
+                    <div>컴퓨터 우측 하단 Wi-Fi 메뉴에서 연결할 수 있습니다.</div>
+                  </div>
+                )}
               </div>
             </div>
           )}

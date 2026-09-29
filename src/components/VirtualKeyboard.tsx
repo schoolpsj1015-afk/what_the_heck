@@ -206,49 +206,24 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
           </button>
         </div>
 
-        {/* Row 4: Controls & Spacebar */}
-        <div className="flex gap-1.5 justify-center mt-0.5">
-          <button
-            onClick={() => handleKeyClick('sudo ')}
-            className="px-2.5 h-9 bg-amber-600/30 text-amber-300 hover:bg-amber-600/50 text-xs font-mono rounded border border-amber-500/40"
-          >
-            sudo
-          </button>
-          <button
-            onClick={() => handleKeyClick('apt ')}
-            className="px-2 h-9 bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-mono rounded border border-slate-700"
-          >
-            apt
-          </button>
-          <button
-            onClick={() => handleKeyClick('python3 ')}
-            className="px-2 h-9 bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-mono rounded border border-slate-700"
-          >
-            python3
-          </button>
-          <button
-            onClick={() => handleKeyClick(' ')}
-            className="flex-1 max-w-sm h-9 bg-slate-700/80 active:bg-cyan-600 text-slate-200 text-xs font-mono rounded hover:bg-slate-600 flex items-center justify-center gap-1 border border-slate-600 shadow-sm transition-all"
-          >
-            <Space className="w-4 h-4 opacity-50" /> 스페이스
-          </button>
+        {/* Row 4: Enlarged Spacebar & Clear */}
+        <div className="flex gap-2 justify-center mt-0.5 px-2">
           {onClear && (
             <button
               onClick={() => {
                 sound.playKeypress();
                 onClear();
               }}
-              className="px-2.5 h-9 bg-slate-800 text-rose-300 hover:bg-rose-900/30 text-xs font-mono rounded border border-slate-700"
+              className="px-3 h-9 bg-slate-800 text-rose-300 hover:bg-rose-900/30 text-xs font-mono rounded-lg border border-slate-700 cursor-pointer"
             >
               초기화
             </button>
           )}
           <button
-            onClick={() => handleKeyClick('165.61.40.95')}
-            className="px-2 h-9 bg-cyan-950/80 text-cyan-300 hover:bg-cyan-900 text-[11px] font-mono rounded border border-cyan-800/60"
-            title="타겟 방화벽 IP 붙여넣기"
+            onClick={() => handleKeyClick(' ')}
+            className="flex-1 h-9 bg-slate-700/90 active:bg-cyan-600 text-slate-200 text-xs font-mono rounded-lg hover:bg-slate-600 flex items-center justify-center gap-1.5 border border-slate-600 shadow-sm transition-all cursor-pointer font-medium"
           >
-            [타겟 IP]
+            <Space className="w-4 h-4 opacity-60" /> 스페이스 (Space)
           </button>
         </div>
       </div>

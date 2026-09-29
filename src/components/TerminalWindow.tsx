@@ -276,14 +276,74 @@ Content-Length: 1024
         }
         break;
 
-      case 'python3':
-      case 'python':
-        if (args.length === 0) {
-          output = `Python 3.12.2 (main, Feb 28 2026, 10:00:00) [GCC 13.2.0] on linux
-도움말을 보려면 "help", "copyright", "credits"를 입력하십시오.`;
+      case 'bettercap':
+        output = `[bettercap v2.32.0 - interactive session started]
+Type 'help' or 'net.probe on' to start network discovery.
+(bettercap) >`;
+        onObjectiveComplete?.('2-2');
+        break;
+
+      case 'net.probe':
+        if (args[0] === 'on') {
+          output = `[sys.log] [INF] net.probe worker started.
+[sys.log] [INF] discovered 12 hosts on local subnet.
+(bettercap) >`;
+          onObjectiveComplete?.('2-3');
         } else {
-          output = `[Python 3 실행 결과: ${args[0]}]
-테스트 스크립트 실행이 정상적으로 완료되었습니다 (Exit code: 0).`;
+          output = `Usage: net.probe on`;
+        }
+        break;
+
+      case 'wifi.recon':
+        output = `[wifi] wifi.recon worker started (monitoring 2.4GHz / 5GHz channels)...
+[wifi] 8 Wi-Fi access points detected in range.
+(bettercap) >`;
+        onObjectiveComplete?.('2-4');
+        break;
+
+      case 'wifi.show':
+        output = `+-------------------+-----------------+----------+--------+
+| BSSID             | SSID            | CH | RSSI |
++-------------------+-----------------+----------+--------+
+| 00:11:22:33:44:55 | Secure-Mesh-AP  | 6  | -42dBm |
+| 88:99:AA:BB:CC:DD | Home-WiFi-5G    | 36 | -65dBm |
+| 11:22:33:44:55:66 | Smartphone-Hotspot| 1| -30dBm |
++-------------------+-----------------+----------+--------+
+(bettercap) >`;
+        onObjectiveComplete?.('2-5');
+        break;
+
+      case 'set':
+        if (args[0] === 'wifi.ap') {
+          output = `[wifi] AP target set to: ${args[1] || '192.168.1.100'} (Secure-Mesh-AP)
+(bettercap) >`;
+          onObjectiveComplete?.('2-6');
+        } else {
+          output = `Usage: set wifi.ap <ip_or_bssid>`;
+        }
+        break;
+
+      case 'wifi.deauth':
+        output = `[wifi] sending deauth packets to target AP...
+[wifi] WPA2 handshake captured! Saved packet log to 'wpa.pcap'.
+(bettercap) >`;
+        onObjectiveComplete?.('2-7');
+        break;
+
+      case 'exit':
+      case 'quit':
+        output = `[bettercap] session terminated. Returning to bash.`;
+        onObjectiveComplete?.('2-8');
+        break;
+
+      case 'hashcat':
+        if (args.includes('wpa.pcap') || args.includes('-m')) {
+          output = `hashcat (v6.2.6) starting in WPA/WPA2 PMKID/EAPOL cracking mode...
+Dictionary attack on wpa.pcap: 100% complete.
+[SUCCESS] Key cracked: Secure-Mesh-AP -> 'security2026'`;
+          onObjectiveComplete?.('2-10');
+        } else {
+          output = `hashcat -m 22000 wpa.pcap (WPA/WPA2 Handshake Cracker)`;
         }
         break;
 

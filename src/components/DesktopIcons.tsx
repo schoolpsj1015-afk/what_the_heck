@@ -13,7 +13,6 @@ export const DesktopIcons: React.FC<DesktopIconsProps> = ({ onOpenWindow, onOpen
     { id: 'terminal', label: '터미널', icon: '💻' },
     { id: 'handbook', label: '시스템 가이드', icon: '📖' },
     { id: 'wireshark', label: '와이어샤크', icon: '🦈' },
-    { id: 'network-map', label: '네트워크 맵', icon: '🌐' },
     { id: 'code-editor', label: 'Code++', icon: '📝' },
     { id: 'settings', label: '환경설정', icon: '⚙️' },
   ];

@@ -3,7 +3,6 @@ export type WindowId =
   | 'terminal'
   | 'handbook'
   | 'wireshark'
-  | 'network-map'
   | 'code-editor'
   | 'settings';
 
@@ -68,12 +67,15 @@ export interface MissionObjective {
   hint?: string;
   shortcutCommand?: string;
   completed: boolean;
+  alwaysShow?: boolean; // '*' mark in story description: shown without needing previous step completed
+  chapterId: number;
+  stepNumber: number;
 }
 
-export interface Mission {
-  id: string;
+export interface MissionChapter {
+  chapterId: number;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   objectives: MissionObjective[];
 }
 

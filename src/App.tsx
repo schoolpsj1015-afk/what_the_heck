@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Power, AlertTriangle } from 'lucide-react';
 import { 
   AppWindow, WindowId, AptPackage, 
-  Mission, PhoneMessage, NetworkNode 
+  MissionChapter, PhoneMessage, NetworkNode 
 } from './types';
 import { 
-  INITIAL_APT_PACKAGES, INITIAL_MISSIONS, 
+  INITIAL_APT_PACKAGES, INITIAL_CHAPTERS, 
   INITIAL_NETWORK_NODES, INITIAL_MESSAGES 
 } from './data/mockData';
 import { sound } from './utils/audio';
@@ -18,7 +18,6 @@ import { BrowserWindow } from './components/BrowserWindow';
 import { TerminalWindow } from './components/TerminalWindow';
 import { HandbookWindow } from './components/HandbookWindow';
 import { WiresharkWindow } from './components/WiresharkWindow';
-import { NetworkMapWindow } from './components/NetworkMapWindow';
 import { CodeEditorWindow } from './components/CodeEditorWindow';
 import { SettingsWindow } from './components/SettingsWindow';
 import { MissionHUD } from './components/MissionHUD';
@@ -39,6 +38,8 @@ const DEFAULT_WINDOWS: AppWindow[] = [
     y: 35,
     width: 840,
     height: 540,
+    minWidth: 400,
+    minHeight: 300,
   },
   {
     id: 'terminal',
@@ -52,6 +53,8 @@ const DEFAULT_WINDOWS: AppWindow[] = [
     y: 110,
     width: 680,
     height: 460,
+    minWidth: 380,
+    minHeight: 280,
   },
   {
     id: 'handbook',
@@ -65,6 +68,8 @@ const DEFAULT_WINDOWS: AppWindow[] = [
     y: 60,
     width: 720,
     height: 440,
+    minWidth: 380,
+    minHeight: 280,
   },
   {
     id: 'wireshark',
@@ -78,19 +83,8 @@ const DEFAULT_WINDOWS: AppWindow[] = [
     y: 90,
     width: 760,
     height: 460,
-  },
-  {
-    id: 'network-map',
-    title: '네트워크 맵 - 서브넷 토폴로지',
-    icon: '🌐',
-    isOpen: false,
-    isMinimized: false,
-    isMaximized: false,
-    zIndex: 5,
-    x: 100,
-    y: 70,
-    width: 800,
-    height: 480,
+    minWidth: 400,
+    minHeight: 300,
   },
   {
     id: 'code-editor',
@@ -104,6 +98,8 @@ const DEFAULT_WINDOWS: AppWindow[] = [
     y: 80,
     width: 700,
     height: 460,
+    minWidth: 380,
+    minHeight: 280,
   },
   {
     id: 'settings',
@@ -117,6 +113,8 @@ const DEFAULT_WINDOWS: AppWindow[] = [
     y: 100,
     width: 650,
     height: 450,
+    minWidth: 380,
+    minHeight: 280,
   },
 ];
 
@@ -128,7 +126,7 @@ export default function App() {
 
   // System & Game States
   const [packages, setPackages] = useState<AptPackage[]>(INITIAL_APT_PACKAGES);
-  const [mission, setMission] = useState<Mission>(INITIAL_MISSIONS[0]);
+  const [chapters, setChapters] = useState<MissionChapter[]>(INITIAL_CHAPTERS);
   const [networkNodes] = useState<NetworkNode[]>(INITIAL_NETWORK_NODES);
   const [phoneMessages, setPhoneMessages] = useState<PhoneMessage[]>(INITIAL_MESSAGES);
   const [walletBalance] = useState(34500);
@@ -240,21 +238,25 @@ export default function App() {
 
   // Toggle mission objective
   const handleToggleObjective = (objId: string) => {
-    setMission((prev) => ({
-      ...prev,
-      objectives: prev.objectives.map((o) =>
-        o.id === objId ? { ...o, completed: !o.completed } : o
-      ),
-    }));
+    setChapters((prev) =>
+      prev.map((chap) => ({
+        ...chap,
+        objectives: chap.objectives.map((o) =>
+          o.id === objId ? { ...o, completed: !o.completed } : o
+        ),
+      }))
+    );
   };
 
   const handleObjectiveComplete = (objId: string) => {
-    setMission((prev) => ({
-      ...prev,
-      objectives: prev.objectives.map((o) =>
-        o.id === objId && !o.completed ? { ...o, completed: true } : o
-      ),
-    }));
+    setChapters((prev) =>
+      prev.map((chap) => ({
+        ...chap,
+        objectives: chap.objectives.map((o) =>
+          o.id === objId && !o.completed ? { ...o, completed: true } : o
+        ),
+      }))
+    );
   };
 
   // sudo apt install package
@@ -314,10 +316,9 @@ export default function App() {
 
       {/* 우측 상단 도움말 HUD */}
       <MissionHUD
-        mission={mission}
+        chapters={chapters}
         onExecuteCommand={handleExecuteInTerminal}
         onOpenHandbook={() => openWindow('handbook')}
-        onToggleObjective={handleToggleObjective}
       />
 
       {/* 창 0: Finefox 웹 브라우저 */}
@@ -381,23 +382,6 @@ export default function App() {
           onUpdatePosition={(x, y) => updateWindowPosition('wireshark', x, y)}
         >
           <WiresharkWindow onExecuteCommand={handleExecuteInTerminal} />
-        </WindowFrame>
-      )}
-
-      {/* 창 4: 네트워크 맵 토폴로지 창 */}
-      {windows.find((w) => w.id === 'network-map')?.isOpen && (
-        <WindowFrame
-          window={windows.find((w) => w.id === 'network-map')!}
-          onClose={() => closeWindow('network-map')}
-          onMinimize={() => minimizeWindow('network-map')}
-          onMaximize={() => maximizeWindow('network-map')}
-          onFocus={() => focusWindow('network-map')}
-          onUpdatePosition={(x, y) => updateWindowPosition('network-map', x, y)}
-        >
-          <NetworkMapWindow
-            nodes={networkNodes}
-            onExecuteCommand={handleExecuteInTerminal}
-          />
         </WindowFrame>
       )}
 
