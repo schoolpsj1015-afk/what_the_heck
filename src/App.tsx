@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { Power, AlertTriangle } from 'lucide-react';
 import { 
-  AppWindow, WindowId, AptPackage, BugBountyProgram, 
-  VulnerabilityReport, Mission, PhoneMessage, NetworkNode 
+  AppWindow, WindowId, AptPackage, 
+  Mission, PhoneMessage, NetworkNode 
 } from './types';
 import { 
-  INITIAL_APT_PACKAGES, INITIAL_MISSIONS, INITIAL_PROGRAMS, 
-  INITIAL_REPORTS, INITIAL_NETWORK_NODES, INITIAL_MESSAGES 
+  INITIAL_APT_PACKAGES, INITIAL_MISSIONS, 
+  INITIAL_NETWORK_NODES, INITIAL_MESSAGES 
 } from './data/mockData';
 import { sound } from './utils/audio';
 
@@ -15,7 +16,6 @@ import { Taskbar } from './components/Taskbar';
 import { WindowFrame } from './components/WindowFrame';
 import { BrowserWindow } from './components/BrowserWindow';
 import { TerminalWindow } from './components/TerminalWindow';
-import { HackhubPortalWindow } from './components/HackhubPortalWindow';
 import { HandbookWindow } from './components/HandbookWindow';
 import { WiresharkWindow } from './components/WiresharkWindow';
 import { NetworkMapWindow } from './components/NetworkMapWindow';
@@ -31,7 +31,7 @@ const DEFAULT_WINDOWS: AppWindow[] = [
     id: 'browser',
     title: 'Finefox - 웹 브라우저',
     icon: '🍍🦊',
-    isOpen: true,
+    isOpen: false,
     isMinimized: false,
     isMaximized: false,
     zIndex: 11,
@@ -44,7 +44,7 @@ const DEFAULT_WINDOWS: AppWindow[] = [
     id: 'terminal',
     title: '터미널 - BearOS / Kali Linux',
     icon: '💻',
-    isOpen: true,
+    isOpen: false,
     isMinimized: false,
     isMaximized: false,
     zIndex: 10,
@@ -52,19 +52,6 @@ const DEFAULT_WINDOWS: AppWindow[] = [
     y: 110,
     width: 680,
     height: 460,
-  },
-  {
-    id: 'hackhub',
-    title: 'HackHub - 버그바운티 관리 및 실시간 분석 포털',
-    icon: '🔥',
-    isOpen: false,
-    isMinimized: false,
-    isMaximized: false,
-    zIndex: 8,
-    x: 120,
-    y: 50,
-    width: 860,
-    height: 540,
   },
   {
     id: 'handbook',
@@ -136,17 +123,15 @@ const DEFAULT_WINDOWS: AppWindow[] = [
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [windows, setWindows] = useState<AppWindow[]>(DEFAULT_WINDOWS);
-  const [activeWindowId, setActiveWindowId] = useState<WindowId | null>('browser');
+  const [activeWindowId, setActiveWindowId] = useState<WindowId | null>(null);
   const [topZIndex, setTopZIndex] = useState(20);
 
   // System & Game States
   const [packages, setPackages] = useState<AptPackage[]>(INITIAL_APT_PACKAGES);
   const [mission, setMission] = useState<Mission>(INITIAL_MISSIONS[0]);
-  const [programs] = useState<BugBountyProgram[]>(INITIAL_PROGRAMS);
-  const [reports, setReports] = useState<VulnerabilityReport[]>(INITIAL_REPORTS);
   const [networkNodes] = useState<NetworkNode[]>(INITIAL_NETWORK_NODES);
   const [phoneMessages, setPhoneMessages] = useState<PhoneMessage[]>(INITIAL_MESSAGES);
-  const [walletBalance, setWalletBalance] = useState(34500);
+  const [walletBalance] = useState(34500);
 
   // Floating Overlays
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
@@ -154,11 +139,14 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [wallpaper, setWallpaper] = useState('/src/assets/images/tropical_island_desktop_1790586966168.jpg');
 
+  // Logout confirmation modal
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   // Terminal & Virtual Keyboard Interop
   const [externalCommand, setExternalCommand] = useState<string | null>(null);
   const [virtualKeyInput, setVirtualKeyInput] = useState<string | null>(null);
 
-  // 모바일 환경 자동 감지하여 가상 키보드 활성화
+  // Auto detect mobile to toggle virtual keyboard
   useEffect(() => {
     const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
     if (isMobile) {
@@ -166,7 +154,7 @@ export default function App() {
     }
   }, []);
 
-  // 사운드 동기화
+  // Sound sync
   const toggleSound = () => {
     const next = !soundEnabled;
     setSoundEnabled(next);
@@ -243,14 +231,14 @@ export default function App() {
     );
   };
 
-  // 터미널로 명령어 실행 연동
+  // Execute terminal command
   const handleExecuteInTerminal = (cmd: string) => {
     openWindow('terminal');
     setExternalCommand(cmd);
     sound.playEnter();
   };
 
-  // 미션 목표 토글
+  // Toggle mission objective
   const handleToggleObjective = (objId: string) => {
     setMission((prev) => ({
       ...prev,
@@ -269,7 +257,7 @@ export default function App() {
     }));
   };
 
-  // sudo apt install 패키지 설치
+  // sudo apt install package
   const handleInstallPackage = (name: string): boolean => {
     const normalized = name.toLowerCase().trim();
     const pkg = packages.find(
@@ -288,45 +276,20 @@ export default function App() {
     return false;
   };
 
-  // 버그바운티 취약점 보고서 제출 처리
-  const handleSubmitReport = (
-    newRep: Omit<VulnerabilityReport, 'id' | 'submittedAt' | 'status' | 'bountyEarned'>
-  ) => {
-    const bountyPayout = newRep.severity === 'Critical' 
-      ? 25000 
-      : newRep.severity === 'High' 
-      ? 12000 
-      : 5000;
-
-    const createdReport: VulnerabilityReport = {
-      ...newRep,
-      id: `REP-${Math.floor(1000 + Math.random() * 9000)}`,
-      status: 'Rewarded',
-      bountyEarned: bountyPayout,
-      submittedAt: '방금 전',
-    };
-
-    setReports((prev) => [createdReport, ...prev]);
-    setWalletBalance((prev) => prev + bountyPayout);
-
-    // 폰 알림 메시지 추가
-    const alertMsg: PhoneMessage = {
-      id: `msg-${Date.now()}`,
-      sender: 'HackHub 보상금 지급 알림',
-      avatar: '💰',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      content: `[바운티 지급 완료] 보고서 ${createdReport.id} (${createdReport.title}) 검증이 완료되어 상금 $${bountyPayout.toLocaleString()}이 지갑으로 즉시 입금되었습니다!`,
-      unread: true,
-    };
-    setPhoneMessages((prev) => [alertMsg, ...prev]);
+  // Handle Logout Confirmation
+  const handleConfirmLogout = () => {
+    sound.playNotification();
+    setShowLogoutModal(false);
+    setWindows(DEFAULT_WINDOWS);
+    setIsPhoneOpen(false);
+    setIsLoggedIn(false);
   };
 
-  // 바탕화면 파일 더블클릭 핸들러
+  // Desktop File double click
   const handleOpenFileNote = (_fileName: string) => {
     openWindow('code-editor');
   };
 
-  // 로그인 전이면 Kali/GNOME Display Manager 로그인 화면 렌더링
   if (!isLoggedIn) {
     return <LoginScreen onLogin={() => setIsLoggedIn(true)} />;
   }
@@ -341,16 +304,15 @@ export default function App() {
         backgroundColor: '#0f172a',
       }}
     >
-      {/* 바탕화면 가독성 조절용 오버레이 */}
       <div className="absolute inset-0 bg-black/20 pointer-events-none" />
 
-      {/* 바탕화면 바로가기 아이콘 (Finefox, 터미널, 와이어샤크, HackHub, 가이드 등) */}
+      {/* 바탕화면 아이콘 */}
       <DesktopIcons
         onOpenWindow={openWindow}
         onOpenFileNote={handleOpenFileNote}
       />
 
-      {/* 우측 상단 도움말 HUD (요청 사항: "오른쪽 상단 창에 도움말 표시하는것도 그대로 만들어주고") */}
+      {/* 우측 상단 도움말 HUD */}
       <MissionHUD
         mission={mission}
         onExecuteCommand={handleExecuteInTerminal}
@@ -358,7 +320,7 @@ export default function App() {
         onToggleObjective={handleToggleObjective}
       />
 
-      {/* 창 0: Finefox 웹 브라우저 (요청: 파인애플 여우 아이콘, Geogle, BCC 뉴스, 은행, 호텔) */}
+      {/* 창 0: Finefox 웹 브라우저 */}
       {windows.find((w) => w.id === 'browser')?.isOpen && (
         <WindowFrame
           window={windows.find((w) => w.id === 'browser')!}
@@ -408,26 +370,7 @@ export default function App() {
         </WindowFrame>
       )}
 
-      {/* 창 3: HackHub 버그바운티 관리 및 실시간 분석 포털 */}
-      {windows.find((w) => w.id === 'hackhub')?.isOpen && (
-        <WindowFrame
-          window={windows.find((w) => w.id === 'hackhub')!}
-          onClose={() => closeWindow('hackhub')}
-          onMinimize={() => minimizeWindow('hackhub')}
-          onMaximize={() => maximizeWindow('hackhub')}
-          onFocus={() => focusWindow('hackhub')}
-          onUpdatePosition={(x, y) => updateWindowPosition('hackhub', x, y)}
-        >
-          <HackhubPortalWindow
-            programs={programs}
-            reports={reports}
-            walletBalance={walletBalance}
-            onSubmitReport={handleSubmitReport}
-          />
-        </WindowFrame>
-      )}
-
-      {/* 창 4: 와이어샤크 패킷 스니퍼 창 */}
+      {/* 창 3: 와이어샤크 패킷 스니퍼 창 */}
       {windows.find((w) => w.id === 'wireshark')?.isOpen && (
         <WindowFrame
           window={windows.find((w) => w.id === 'wireshark')!}
@@ -441,7 +384,7 @@ export default function App() {
         </WindowFrame>
       )}
 
-      {/* 창 5: 네트워크 맵 토폴로지 창 */}
+      {/* 창 4: 네트워크 맵 토폴로지 창 */}
       {windows.find((w) => w.id === 'network-map')?.isOpen && (
         <WindowFrame
           window={windows.find((w) => w.id === 'network-map')!}
@@ -458,7 +401,7 @@ export default function App() {
         </WindowFrame>
       )}
 
-      {/* 창 6: Code++ 스크립트 및 메모 편집기 */}
+      {/* 창 5: Code++ 스크립트 및 메모 편집기 */}
       {windows.find((w) => w.id === 'code-editor')?.isOpen && (
         <WindowFrame
           window={windows.find((w) => w.id === 'code-editor')!}
@@ -472,7 +415,7 @@ export default function App() {
         </WindowFrame>
       )}
 
-      {/* 창 7: 시스템 설정 및 테마 */}
+      {/* 창 6: 시스템 설정 및 테마 */}
       {windows.find((w) => w.id === 'settings')?.isOpen && (
         <WindowFrame
           window={windows.find((w) => w.id === 'settings')!}
@@ -491,7 +434,7 @@ export default function App() {
         </WindowFrame>
       )}
 
-      {/* 오른쪽 하단 스마트폰 (요청 사항: "Phone도 오른쪽 아래에 추가") */}
+      {/* 오른쪽 하단 스마트폰 */}
       <HackerPhone
         isOpen={isPhoneOpen}
         onClose={() => setIsPhoneOpen(false)}
@@ -511,7 +454,7 @@ export default function App() {
         }}
       />
 
-      {/* 가상 쿼티(QWERTY) 키보드 (모바일 대응 및 숫자키 열 탑재) */}
+      {/* 가상 쿼티(QWERTY) 키보드 */}
       <VirtualKeyboard
         isOpen={isKeyboardOpen}
         onClose={() => setIsKeyboardOpen(false)}
@@ -533,10 +476,41 @@ export default function App() {
         isPhoneOpen={isPhoneOpen}
         onTogglePhone={() => setIsPhoneOpen(!isPhoneOpen)}
         unreadMessageCount={phoneMessages.filter((m) => m.unread).length}
-        onLockScreen={() => setIsLoggedIn(false)}
+        onRequestLogout={() => setShowLogoutModal(true)}
         soundEnabled={soundEnabled}
         onToggleSound={toggleSound}
       />
+
+      {/* 전원 버튼 로그아웃 확인 팝업 모달 */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
+          <div className="w-full max-w-sm bg-slate-900 border-2 border-rose-600/80 rounded-2xl p-6 shadow-2xl space-y-5 text-center">
+            <div className="w-14 h-14 rounded-full bg-rose-950 border border-rose-600/60 flex items-center justify-center mx-auto text-rose-400">
+              <Power className="w-7 h-7" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-base font-bold text-white">로그아웃 하시겠습니까?</h3>
+              <p className="text-xs font-semibold text-rose-300 leading-relaxed bg-rose-950/70 border border-rose-900/60 p-3 rounded-xl">
+                로그아웃 하시겠습니까? 모든 데이터가 날아갑니다!
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                onClick={handleConfirmLogout}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow-lg transition-colors cursor-pointer"
+              >
+                예
+              </button>
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700 transition-colors cursor-pointer"
+              >
+                아니오
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

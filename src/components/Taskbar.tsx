@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Keyboard as KeyboardIcon, Smartphone, Volume2, VolumeX, Wifi, 
-  Power
+  Power, Check, Lock, ShieldCheck
 } from 'lucide-react';
 import { AppWindow, WindowId } from '../types';
 import { sound } from '../utils/audio';
@@ -16,10 +16,26 @@ interface TaskbarProps {
   isPhoneOpen: boolean;
   onTogglePhone: () => void;
   unreadMessageCount: number;
-  onLockScreen: () => void;
+  onRequestLogout: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
 }
+
+interface WifiNetwork {
+  id: string;
+  ssid: string;
+  signal: string;
+  secured: boolean;
+  connected: boolean;
+}
+
+const INITIAL_WIFI_NETWORKS: WifiNetwork[] = [
+  { id: 'wifi-1', ssid: 'BearOS-WiFi-5G', signal: '100%', secured: true, connected: true },
+  { id: 'wifi-2', ssid: 'KT_GiGA_Mesh_9A2', signal: '90%', secured: true, connected: false },
+  { id: 'wifi-3', ssid: 'SK_WiFi_GIGA_Secure', signal: '85%', secured: true, connected: false },
+  { id: 'wifi-4', ssid: 'Free_Public_WiFi', signal: '70%', secured: false, connected: false },
+  { id: 'wifi-5', ssid: 'AndroidHotspot_981', signal: '50%', secured: true, connected: false },
+];
 
 export const Taskbar: React.FC<TaskbarProps> = ({
   windows,
@@ -31,15 +47,31 @@ export const Taskbar: React.FC<TaskbarProps> = ({
   isPhoneOpen,
   onTogglePhone,
   unreadMessageCount,
-  onLockScreen,
+  onRequestLogout,
   soundEnabled,
   onToggleSound,
 }) => {
   const [isAppMenuOpen, setIsAppMenuOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isWifiMenuOpen, setIsWifiMenuOpen] = useState(false);
+  const [wifiEnabled, setWifiEnabled] = useState(true);
+  const [wifiNetworks, setWifiNetworks] = useState<WifiNetwork[]>(INITIAL_WIFI_NETWORKS);
 
   const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const currentDate = new Date().toLocaleDateString('ko-KR', { weekday: 'short', month: 'short', day: 'numeric' });
+
+  // Only show windows that are currently OPEN
+  const openWindows = windows.filter((win) => win.isOpen);
+
+  const handleConnectWifi = (id: string) => {
+    sound.playNotification();
+    setWifiNetworks((prev) =>
+      prev.map((net) => ({
+        ...net,
+        connected: net.id === id,
+      }))
+    );
+  };
 
   return (
     <>
@@ -99,10 +131,13 @@ export const Taskbar: React.FC<TaskbarProps> = ({
                 <span>사용자: <b className="text-white">kali</b></span>
               </div>
               <button
-                onClick={onLockScreen}
+                onClick={() => {
+                  setIsAppMenuOpen(false);
+                  onRequestLogout();
+                }}
                 className="px-3 py-1 bg-rose-950/80 hover:bg-rose-900 border border-rose-800 text-rose-300 rounded text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Power className="w-3.5 h-3.5" /> 화면 잠금
+                <Power className="w-3.5 h-3.5" /> 로그아웃
               </button>
             </div>
           </div>
@@ -117,13 +152,73 @@ export const Taskbar: React.FC<TaskbarProps> = ({
         >
           <div className="text-cyan-400 font-bold">{currentDate}</div>
           <div className="text-slate-300">{currentTime} KST</div>
-          <div className="text-[10px] text-slate-500">BearOS 보안 시간 동기화: 활성화됨</div>
+          <div className="text-[10px] text-slate-500">BearOS 시간 동기화 완료</div>
         </div>
       )}
 
-      {/* 우분투 하단 도크 / 작업표시줄 (요청 사항) */}
+      {/* Wi-Fi 설정 우측 하단 팝오버 */}
+      {isWifiMenuOpen && (
+        <div 
+          className="fixed bottom-12 right-12 z-50 w-72 bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-2xl space-y-3 text-xs select-none animate-in slide-in-from-bottom-2"
+        >
+          {/* 헤더 & 토글 */}
+          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+            <div className="flex items-center gap-2">
+              <Wifi className={`w-4 h-4 ${wifiEnabled ? 'text-emerald-400' : 'text-slate-500'}`} />
+              <span className="font-bold text-white">Wi-Fi 설정</span>
+            </div>
+            <button
+              onClick={() => {
+                setWifiEnabled(!wifiEnabled);
+                sound.playKeypress();
+              }}
+              className={`px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition-colors ${
+                wifiEnabled ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
+              }`}
+            >
+              {wifiEnabled ? '켜짐' : '꺼짐'}
+            </button>
+          </div>
+
+          {/* Wi-Fi 목록 */}
+          {wifiEnabled ? (
+            <div className="space-y-1.5 max-h-56 overflow-y-auto">
+              <div className="text-[10px] text-slate-400 font-semibold uppercase">사용 가능한 네트워크</div>
+              {wifiNetworks.map((net) => (
+                <button
+                  key={net.id}
+                  onClick={() => handleConnectWifi(net.id)}
+                  className={`w-full p-2 rounded-xl flex items-center justify-between transition-colors cursor-pointer text-left ${
+                    net.connected
+                      ? 'bg-emerald-950/80 border border-emerald-700 text-emerald-300'
+                      : 'bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Wifi className={`w-3.5 h-3.5 ${net.connected ? 'text-emerald-400' : 'text-slate-400'}`} />
+                    <div>
+                      <div className="font-semibold text-xs flex items-center gap-1">
+                        <span>{net.ssid}</span>
+                        {net.secured && <Lock className="w-3 h-3 text-slate-400" />}
+                      </div>
+                      <span className="text-[10px] text-slate-400">신호 {net.signal}</span>
+                    </div>
+                  </div>
+                  {net.connected && <Check className="w-4 h-4 text-emerald-400" />}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="p-4 bg-slate-950 rounded-xl text-center text-slate-400 text-xs">
+              Wi-Fi가 비활성화되어 있습니다.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 우분투 하단 작업표시줄 */}
       <footer className="fixed bottom-0 left-0 right-0 h-11 bg-black/85 backdrop-blur-md border-t border-slate-800/90 z-50 flex items-center justify-between px-2 sm:px-3 text-slate-200 select-none">
-        {/* 좌측: 앱 런처 및 실행 중인 창 아이콘 */}
+        {/* 좌측: 앱 런처 및 실행 중인 창(isOpen인 창만) 아이콘 표기 */}
         <div className="flex items-center gap-1 overflow-x-auto">
           {/* 우분투/Kali 메인 앱 런처 버튼 */}
           <button
@@ -140,10 +235,9 @@ export const Taskbar: React.FC<TaskbarProps> = ({
 
           <div className="h-5 w-[1px] bg-slate-800 mx-1 shrink-0"></div>
 
-          {/* 실행 중 및 고정된 창 버튼 */}
-          {windows.map((win) => {
-            const isRunning = win.isOpen;
-            const isActive = win.isOpen && !win.isMinimized && activeWindowId === win.id;
+          {/* 떠있는(isOpen: true) 창만 표기 */}
+          {openWindows.map((win) => {
+            const isActive = !win.isMinimized && activeWindowId === win.id;
 
             return (
               <button
@@ -155,9 +249,7 @@ export const Taskbar: React.FC<TaskbarProps> = ({
                 className={`relative h-8 px-2.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
                   isActive
                     ? 'bg-slate-800 text-cyan-300 shadow-sm border border-cyan-800/60'
-                    : isRunning
-                    ? 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'
-                    : 'hover:bg-slate-900/80 text-slate-400 opacity-70 hover:opacity-100'
+                    : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'
                 }`}
                 title={win.title}
               >
@@ -167,52 +259,48 @@ export const Taskbar: React.FC<TaskbarProps> = ({
                 </span>
 
                 {/* 실행 표시 점 */}
-                {isRunning && (
-                  <span className={`w-1.5 h-1.5 rounded-full ${
-                    isActive ? 'bg-cyan-400 shadow-sm shadow-cyan-400' : 'bg-slate-400'
-                  }`} />
-                )}
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  isActive ? 'bg-cyan-400 shadow-sm shadow-cyan-400' : 'bg-slate-400'
+                }`} />
               </button>
             );
           })}
         </div>
 
-        {/* 우측 섹션: 가상 키보드 토글, 해커폰 토글, 사운드, 네트워크, 시계 */}
+        {/* 우측 섹션: 가상 키보드(아이콘만), 스마트폰(아이콘만), 사운드, Wi-Fi(아이콘만), 시계, 로그아웃 */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* 가상 쿼티 키보드 토글 (모바일 & 터치 환경 필수) */}
+          {/* 가상 키보드 토글 버튼 (아이콘 전용) */}
           <button
             onClick={() => {
               onToggleKeyboard();
               sound.playKeypress();
             }}
-            className={`h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-all cursor-pointer border ${
+            className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer border ${
               isKeyboardOpen
                 ? 'bg-cyan-600 text-white border-cyan-400 shadow-lg shadow-cyan-950'
                 : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
             }`}
-            title="숫자키 포함 가상 쿼티(QWERTY) 키보드 토글"
+            title="가상 키보드 토글"
           >
-            <KeyboardIcon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">가상 키보드</span>
+            <KeyboardIcon className="w-4 h-4" />
           </button>
 
-          {/* 우하단 스마트폰 토글 */}
+          {/* 스마트폰 토글 버튼 (아이콘 전용) */}
           <button
             onClick={() => {
               onTogglePhone();
               sound.playKeypress();
             }}
-            className={`relative h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-all cursor-pointer border ${
+            className={`relative h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer border ${
               isPhoneOpen
                 ? 'bg-cyan-600 text-white border-cyan-400 shadow-lg shadow-cyan-950'
                 : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
             }`}
-            title="스마트폰 열기"
+            title="스마트폰 토글"
           >
-            <Smartphone className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">스마트폰</span>
+            <Smartphone className="w-4 h-4" />
             {unreadMessageCount > 0 && (
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
             )}
           </button>
 
@@ -222,17 +310,27 @@ export const Taskbar: React.FC<TaskbarProps> = ({
               onToggleSound();
               sound.playKeypress();
             }}
-            className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 cursor-pointer"
+            className="h-8 w-8 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 flex items-center justify-center cursor-pointer"
             title={soundEnabled ? '음소거' : '소리 켜기'}
           >
-            {soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-cyan-400" /> : <VolumeX className="w-3.5 h-3.5 text-slate-500" />}
+            {soundEnabled ? <Volume2 className="w-4 h-4 text-cyan-400" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
           </button>
 
-          {/* 네트워크 eth0 정보 */}
-          <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded bg-slate-900 border border-slate-800 text-[11px] font-mono text-emerald-400">
-            <Wifi className="w-3 h-3" />
-            <span>192.168.1.2</span>
-          </div>
+          {/* Wi-Fi 설정 버튼 (아이콘만) */}
+          <button
+            onClick={() => {
+              setIsWifiMenuOpen(!isWifiMenuOpen);
+              sound.playKeypress();
+            }}
+            className={`h-8 w-8 rounded-lg border flex items-center justify-center cursor-pointer transition-colors ${
+              isWifiMenuOpen
+                ? 'bg-emerald-950 text-emerald-300 border-emerald-600'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+            }`}
+            title="Wi-Fi 네트워크 설정"
+          >
+            <Wifi className="w-4 h-4 text-emerald-400" />
+          </button>
 
           {/* 시계 & 캘린더 팝오버 토글 */}
           <button
@@ -246,13 +344,16 @@ export const Taskbar: React.FC<TaskbarProps> = ({
             <span className="text-white font-bold">{currentTime}</span>
           </button>
 
-          {/* 화면 잠금 버튼 */}
+          {/* 전원 버튼 (클릭 시 로그아웃 확인 팝업) */}
           <button
-            onClick={onLockScreen}
-            className="p-1.5 rounded-lg bg-slate-900 hover:bg-rose-900/50 text-slate-400 hover:text-rose-300 border border-slate-800 transition-colors cursor-pointer"
-            title="Kali Linux 화면 잠금"
+            onClick={() => {
+              sound.playKeypress();
+              onRequestLogout();
+            }}
+            className="h-8 w-8 rounded-lg bg-slate-900 hover:bg-rose-900/60 text-slate-400 hover:text-rose-300 border border-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+            title="전원 / 로그아웃"
           >
-            <Power className="w-3.5 h-3.5" />
+            <Power className="w-4 h-4" />
           </button>
         </div>
       </footer>
